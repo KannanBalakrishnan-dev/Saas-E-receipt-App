@@ -129,6 +129,10 @@ export default function Dashboard() {
             Monthly Target
           </Typography>
 
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Total income: ₹{totalAmount}
+          </Typography>
+
           <LinearProgress
             variant="determinate"
             value={70}

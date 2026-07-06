@@ -1,115 +1,192 @@
 import { useState } from "react";
-
 import {
   Box,
-  Card,
-  CardContent,
+  Paper,
+  Typography,
   TextField,
   Button,
-  Typography,
-  Stack,
-  Avatar,
+  InputAdornment,
+  Alert,
 } from "@mui/material";
+import StoreIcon from "@mui/icons-material/Store";
+import PersonIcon from "@mui/icons-material/Person";
+import PhoneIcon from "@mui/icons-material/Phone";
+import HomeIcon from "@mui/icons-material/Home";
+import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 
-import PersonAddIcon from "@mui/icons-material/PersonAdd";
+/**
+ * Register
+ * Shown exactly once, right after a brand-new phone number completes OTP
+ * verification in Login.jsx. Collects the business profile (the same shape
+ * Settings.jsx edits later) and writes it to localStorage["settings"], then
+ * marks this Firebase user as registered so future logins skip straight to
+ * the main app.
+ *
+ * Props:
+ *  - user: the Firebase user object (gives us the verified phone number)
+ *  - onComplete(profile): called after saving, so App.jsx can flip into the
+ *    authenticated app shell without requiring another login.
+ */
+const EMPTY_PROFILE = {
+  businessName: "",
+  ownerName: "",
+  address: "",
+  upiId: "",
+};
 
-export default function Register({ setUser }) {
-  const [form, setForm] = useState({
-    name: "",
-    business: "",
-    email: "",
-    password: "",
-  });
+export default function Register({ user, onComplete }) {
+  const [form, setForm] = useState(EMPTY_PROFILE);
+  const [error, setError] = useState("");
 
-  const handleRegister = () => {
-    if (!form.name || !form.email || !form.password) {
-      alert("Fill all fields");
+  const handleField = (field) => (e) => {
+    setForm({ ...form, [field]: e.target.value });
+  };
+
+  const handleSubmit = () => {
+    if (!form.businessName.trim() || !form.ownerName.trim()) {
+      setError("Business name and owner name are required.");
       return;
     }
 
-    localStorage.setItem("user", JSON.stringify(form));
+    const profile = {
+      ...form,
+      phone: user?.phoneNumber || "",
+    };
 
-    setUser(form);
+    localStorage.setItem("settings", JSON.stringify(profile));
+    if (user?.uid) {
+      localStorage.setItem(`registered_${user.uid}`, "1");
+    }
+
+    onComplete?.(profile);
   };
 
   return (
     <Box
       sx={{
-        height: "100vh",
+        minHeight: "100dvh",
         display: "flex",
-        alignItems: "center",
+        flexDirection: "column",
         justifyContent: "center",
-        p: 2,
+        alignItems: "center",
+        bgcolor: "background.default",
+        px: 3,
       }}
     >
-      <Card
+      <Paper
+        elevation={0}
         sx={{
           width: "100%",
-          maxWidth: 400,
-          borderRadius: 5,
+          maxWidth: 420,
+          p: 3.5,
+          borderRadius: 4,
+          border: "1px solid #E2E8F0",
         }}
       >
-        <CardContent>
-          <Stack spacing={2}>
-            <Avatar sx={{ mx: "auto" }}>
-              <PersonAddIcon />
-            </Avatar>
+        <Typography variant="h6" sx={{ mb: 0.5 }}>
+          Set up your business
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          One-time setup — this appears on every receipt you generate.
+        </Typography>
 
-            <Typography variant="h5" fontWeight={800} textAlign="center">
-              Create Account
-            </Typography>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
 
-            <TextField
-              label="Owner Name"
-              value={form.name}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  name: e.target.value,
-                })
-              }
-            />
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <TextField
+            fullWidth
+            required
+            label="Business Name"
+            placeholder="e.g. Kumar Electricals"
+            value={form.businessName}
+            onChange={handleField("businessName")}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <StoreIcon sx={{ color: "#94A3B8" }} />
+                </InputAdornment>
+              ),
+            }}
+          />
 
-            <TextField
-              label="Business Name"
-              value={form.business}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  business: e.target.value,
-                })
-              }
-            />
+          <TextField
+            fullWidth
+            required
+            label="Owner Name"
+            placeholder="e.g. Ramesh Kumar"
+            value={form.ownerName}
+            onChange={handleField("ownerName")}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <PersonIcon sx={{ color: "#94A3B8" }} />
+                </InputAdornment>
+              ),
+            }}
+          />
 
-            <TextField
-              label="Email"
-              value={form.email}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  email: e.target.value,
-                })
-              }
-            />
+          <TextField
+            fullWidth
+            label="Phone"
+            value={user?.phoneNumber || ""}
+            disabled
+            helperText="Verified via OTP"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <PhoneIcon sx={{ color: "#94A3B8" }} />
+                </InputAdornment>
+              ),
+            }}
+          />
 
-            <TextField
-              label="Password"
-              type="password"
-              value={form.password}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  password: e.target.value,
-                })
-              }
-            />
+          <TextField
+            fullWidth
+            label="Address"
+            placeholder="Shop address"
+            value={form.address}
+            onChange={handleField("address")}
+            multiline
+            minRows={2}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start" sx={{ alignSelf: "flex-start", mt: 1.2 }}>
+                  <HomeIcon sx={{ color: "#94A3B8" }} />
+                </InputAdornment>
+              ),
+            }}
+          />
 
-            <Button variant="contained" size="large" onClick={handleRegister}>
-              Register
-            </Button>
-          </Stack>
-        </CardContent>
-      </Card>
+          <TextField
+            fullWidth
+            label="UPI ID"
+            placeholder="example@upi"
+            value={form.upiId}
+            onChange={handleField("upiId")}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <AccountBalanceWalletIcon sx={{ color: "#94A3B8" }} />
+                </InputAdornment>
+              ),
+            }}
+          />
+        </Box>
+
+        <Button
+          fullWidth
+          size="large"
+          variant="contained"
+          onClick={handleSubmit}
+          sx={{ mt: 3, py: 1.4, borderRadius: 3 }}
+        >
+          Continue
+        </Button>
+      </Paper>
     </Box>
   );
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Box,
   Stack,
@@ -36,18 +36,15 @@ function formatDate(iso) {
 }
 
 export default function History() {
-  const [receipts, setReceipts] = useState([]);
+  const [receipts, setReceipts] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('receipts')) || [];
+    } catch {
+      return [];
+    }
+  });
   const [pendingDelete, setPendingDelete] = useState(null);
   const settings = useMemo(() => getSettings(), []);
-
-  useEffect(() => {
-    try {
-      const stored = JSON.parse(localStorage.getItem('receipts')) || [];
-      setReceipts(stored);
-    } catch {
-      setReceipts([]);
-    }
-  }, []);
 
   const handleShareAgain = (receipt) => {
     shareOnWhatsApp(receipt, settings);
